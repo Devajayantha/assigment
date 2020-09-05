@@ -50,6 +50,7 @@
                             <th class="text-right">PRICE</th>
                             <th class="text-right">QUANTITY</th>
                             <th class="text-right">TOTAL</th>
+                            <th class="text-right">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -58,9 +59,12 @@
                             <td class="text-left">
                                 <h3>{{invoiceItem.product.name}}</h3>{PRODUCT DESCRIPTION}
                             </td>
-                            <td class="unit">{{invoiceItem.product.price}}</td>
+                            <td class="unit">${{invoiceItem.product.price}}</td>
                             <td class="qty">{{invoiceItem.quantity}}</td>
-                            <td class="total">{{invoiceItem.price * invoiceItem.quantity}}</td>
+                            <td class="total">${{invoiceItem.price * invoiceItem.quantity}}</td>
+                            <td>
+                                <div @click="removeProductFromInvoice(key)" class="btn btn-danger btn-sm">Delete</div>
+                            </td>
                         </tr>
 
                     </tbody>
@@ -68,21 +72,25 @@
                         <tr>
                             <td colspan="2"></td>
                             <td colspan="2">SUBTOTAL</td>
-                            <td>{TOTAL SUBTRACTED BY 25%}</td>
+                            <td>${{subTotal}}</td>
                         </tr>
                         <tr>
                             <td colspan="2"></td>
                             <td colspan="2">TAX 25%</td>
-                            <td>{25% OF TOTAL}</td>
+                            <td>${{percentagePrice}}</td>
                         </tr>
                         <tr>
                             <td colspan="2"></td>
                             <td colspan="2">GRAND TOTAL</td>
-                            <td>{{totalPrice}}</td>
+                            <td>${{totalPrice}}</td>
                         </tr>
                     </tfoot>
                 </table>
-                <div class="thanks">Thank you!</div>
+                <div class="thanks">
+                    <div v-if="loading == false" @click="saveInvoiceToDatabase" class="btn btn-primary">Save Invoice</div>
+                    <div v-else class="btn btn-primary">Loading</div>
+                    Thank you!
+                </div>
                 <div class="notices">
                     <div>NOTICE:</div>
                     <div class="notice">A finance charge of 1.5% will be made on unpaid balances after due date.</div>
@@ -130,8 +138,10 @@ export default {
             insertNewProductModal: false,
             invoiceItems: [],
             invoiceItemProducts: [],
-            percentage: 0,
+
+            percentagePrice: 0,
             totalPrice: 0,
+            subTotal: 0,
 
             // invoiceItemRow: {
 
@@ -167,6 +177,11 @@ export default {
 
         },
 
+        removeProductFromInvoice(key) {
+            const self = this;
+            self.invoiceItems.splice(key, 1);
+        },
+
         addNewRowToInvoice(e) {
             const self = this;
 
@@ -178,6 +193,31 @@ export default {
 
             self.calculatAllPrice();
 
+        },
+
+        saveInvoiceToDatabase() {
+            const self = this;
+
+            self.loading = true;
+
+            Vue.axios.post('/invoice/store', {
+                invoiceItems: self.invoiceItems,
+                totalPrice: self.totalPrice,
+                subTotal: self.subTotal,
+                percentagePrice: self.percentagePrice
+
+            }).then(response => {
+                var data = response.data;
+
+                // compile.log(data);
+                if (data.success == true) {
+                    window.location = '/invoice';
+                }
+                self.loading = false;
+
+            }).catch(error => {
+                self.loading = false;
+            })
         },
 
         getAllInvoiceItemProducts() {
@@ -212,8 +252,12 @@ export default {
             })
 
             self.totalPrice = totalPrice;
-        }
 
+            self.percentagePrice = (25 / 100) * self.totalPrice;
+
+            self.subTotal = self.totalPrice - self.percentagePrice;
+
+        }
     }
 }
 </script>

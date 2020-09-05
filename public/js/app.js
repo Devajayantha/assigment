@@ -2065,6 +2065,14 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
@@ -2073,8 +2081,9 @@ __webpack_require__.r(__webpack_exports__);
       insertNewProductModal: false,
       invoiceItems: [],
       invoiceItemProducts: [],
-      percentage: 0,
+      percentagePrice: 0,
       totalPrice: 0,
+      subTotal: 0,
       // invoiceItemRow: {
       // },
       newItem: {
@@ -2101,6 +2110,10 @@ __webpack_require__.r(__webpack_exports__);
         product: product
       };
     },
+    removeProductFromInvoice: function removeProductFromInvoice(key) {
+      var self = this;
+      self.invoiceItems.splice(key, 1);
+    },
     addNewRowToInvoice: function addNewRowToInvoice(e) {
       var self = this;
       e.preventDefault();
@@ -2111,6 +2124,26 @@ __webpack_require__.r(__webpack_exports__);
       var newRow = self.generateNewItemRow(self.newItem.invoice_item_product_id, self.newItem.quantity, productSelect.price, productSelect);
       self.invoiceItems.push(newRow);
       self.calculatAllPrice();
+    },
+    saveInvoiceToDatabase: function saveInvoiceToDatabase() {
+      var self = this;
+      self.loading = true;
+      Vue.axios.post('/invoice/store', {
+        invoiceItems: self.invoiceItems,
+        totalPrice: self.totalPrice,
+        subTotal: self.subTotal,
+        percentagePrice: self.percentagePrice
+      }).then(function (response) {
+        var data = response.data; // compile.log(data);
+
+        if (data.success == true) {
+          window.location = '/invoice';
+        }
+
+        self.loading = false;
+      })["catch"](function (error) {
+        self.loading = false;
+      });
     },
     getAllInvoiceItemProducts: function getAllInvoiceItemProducts() {
       var self = this;
@@ -2133,6 +2166,8 @@ __webpack_require__.r(__webpack_exports__);
         totalPrice += item.quantity * item.product.price;
       });
       self.totalPrice = totalPrice;
+      self.percentagePrice = 25 / 100 * self.totalPrice;
+      self.subTotal = self.totalPrice - self.percentagePrice;
     }
   }
 });
@@ -2741,7 +2776,7 @@ var render = function() {
                       ]),
                       _vm._v(" "),
                       _c("td", { staticClass: "unit" }, [
-                        _vm._v(_vm._s(invoiceItem.product.price))
+                        _vm._v("$" + _vm._s(invoiceItem.product.price))
                       ]),
                       _vm._v(" "),
                       _c("td", { staticClass: "qty" }, [
@@ -2749,7 +2784,24 @@ var render = function() {
                       ]),
                       _vm._v(" "),
                       _c("td", { staticClass: "total" }, [
-                        _vm._v(_vm._s(invoiceItem.price * invoiceItem.quantity))
+                        _vm._v(
+                          "$" + _vm._s(invoiceItem.price * invoiceItem.quantity)
+                        )
+                      ]),
+                      _vm._v(" "),
+                      _c("td", [
+                        _c(
+                          "div",
+                          {
+                            staticClass: "btn btn-danger btn-sm",
+                            on: {
+                              click: function($event) {
+                                return _vm.removeProductFromInvoice(key)
+                              }
+                            }
+                          },
+                          [_vm._v("Delete")]
+                        )
                       ])
                     ])
                   }),
@@ -2757,9 +2809,21 @@ var render = function() {
                 ),
                 _vm._v(" "),
                 _c("tfoot", [
-                  _vm._m(3),
+                  _c("tr", [
+                    _c("td", { attrs: { colspan: "2" } }),
+                    _vm._v(" "),
+                    _c("td", { attrs: { colspan: "2" } }, [_vm._v("SUBTOTAL")]),
+                    _vm._v(" "),
+                    _c("td", [_vm._v("$" + _vm._s(_vm.subTotal))])
+                  ]),
                   _vm._v(" "),
-                  _vm._m(4),
+                  _c("tr", [
+                    _c("td", { attrs: { colspan: "2" } }),
+                    _vm._v(" "),
+                    _c("td", { attrs: { colspan: "2" } }, [_vm._v("TAX 25%")]),
+                    _vm._v(" "),
+                    _c("td", [_vm._v("$" + _vm._s(_vm.percentagePrice))])
+                  ]),
                   _vm._v(" "),
                   _c("tr", [
                     _c("td", { attrs: { colspan: "2" } }),
@@ -2768,15 +2832,29 @@ var render = function() {
                       _vm._v("GRAND TOTAL")
                     ]),
                     _vm._v(" "),
-                    _c("td", [_vm._v(_vm._s(_vm.totalPrice))])
+                    _c("td", [_vm._v("$" + _vm._s(_vm.totalPrice))])
                   ])
                 ])
               ]
             ),
             _vm._v(" "),
-            _c("div", { staticClass: "thanks" }, [_vm._v("Thank you!")]),
+            _c("div", { staticClass: "thanks" }, [
+              _vm.loading == false
+                ? _c(
+                    "div",
+                    {
+                      staticClass: "btn btn-primary",
+                      on: { click: _vm.saveInvoiceToDatabase }
+                    },
+                    [_vm._v("Save Invoice")]
+                  )
+                : _c("div", { staticClass: "btn btn-primary" }, [
+                    _vm._v("Loading")
+                  ]),
+              _vm._v("\r\n                    Thank you!\r\n                ")
+            ]),
             _vm._v(" "),
-            _vm._m(5)
+            _vm._m(3)
           ]),
           _vm._v(" "),
           _c("footer", [
@@ -2985,32 +3063,10 @@ var staticRenderFns = [
         _vm._v(" "),
         _c("th", { staticClass: "text-right" }, [_vm._v("QUANTITY")]),
         _vm._v(" "),
-        _c("th", { staticClass: "text-right" }, [_vm._v("TOTAL")])
+        _c("th", { staticClass: "text-right" }, [_vm._v("TOTAL")]),
+        _vm._v(" "),
+        _c("th", { staticClass: "text-right" }, [_vm._v("ACTIONS")])
       ])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("tr", [
-      _c("td", { attrs: { colspan: "2" } }),
-      _vm._v(" "),
-      _c("td", { attrs: { colspan: "2" } }, [_vm._v("SUBTOTAL")]),
-      _vm._v(" "),
-      _c("td", [_vm._v("{TOTAL SUBTRACTED BY 25%}")])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("tr", [
-      _c("td", { attrs: { colspan: "2" } }),
-      _vm._v(" "),
-      _c("td", { attrs: { colspan: "2" } }, [_vm._v("TAX 25%")]),
-      _vm._v(" "),
-      _c("td", [_vm._v("{25% OF TOTAL}")])
     ])
   },
   function() {
@@ -15283,15 +15339,14 @@ __webpack_require__.r(__webpack_exports__);
 /*!****************************************************!*\
   !*** ./resources/js/components/invoice/create.vue ***!
   \****************************************************/
-/*! no static exports found */
+/*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _create_vue_vue_type_template_id_fb3b9bae___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./create.vue?vue&type=template&id=fb3b9bae& */ "./resources/js/components/invoice/create.vue?vue&type=template&id=fb3b9bae&");
 /* harmony import */ var _create_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./create.vue?vue&type=script&lang=js& */ "./resources/js/components/invoice/create.vue?vue&type=script&lang=js&");
-/* harmony reexport (unknown) */ for(var __WEBPACK_IMPORT_KEY__ in _create_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__) if(["default"].indexOf(__WEBPACK_IMPORT_KEY__) < 0) (function(key) { __webpack_require__.d(__webpack_exports__, key, function() { return _create_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__[key]; }) }(__WEBPACK_IMPORT_KEY__));
-/* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../../node_modules/vue-loader/lib/runtime/componentNormalizer.js */ "./node_modules/vue-loader/lib/runtime/componentNormalizer.js");
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../../node_modules/vue-loader/lib/runtime/componentNormalizer.js */ "./node_modules/vue-loader/lib/runtime/componentNormalizer.js");
 
 
 
@@ -15321,7 +15376,7 @@ component.options.__file = "resources/js/components/invoice/create.vue"
 /*!*****************************************************************************!*\
   !*** ./resources/js/components/invoice/create.vue?vue&type=script&lang=js& ***!
   \*****************************************************************************/
-/*! no static exports found */
+/*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

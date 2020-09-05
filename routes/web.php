@@ -26,3 +26,4 @@ Route::get('invoice/invoiceitemproducts/get', 'InvoiceController@getAllInvoiceIt
 Route::get('invoice', 'InvoiceController@index');
 Route::get('invoice/create', 'InvoiceController@create');
 
+Route::post('invoice/store', 'InvoiceController@store');

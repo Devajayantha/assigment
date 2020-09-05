@@ -11,18 +11,13 @@
         <h1>Invoice</h1>
 
         <ul>
+            @foreach ($invoices as $item)
             <li>
-                <div class="btn btn-primary"> Invoice 1
-                </div>
+                <div class="btn btn-primary"> {{$item->id}}
+                </div><br>
             </li>
-            <li>
-                <div class="btn btn-primary"> Invoice 1
-                </div>
-            </li>
-            <li>
-                <div class="btn btn-primary"> Invoice 1
-                </div>
-            </li>
+            @endforeach
+
         </ul>
     </div>
     <a href="/invoice/create" class="btn btn-primary"> Create Invoice</a>
